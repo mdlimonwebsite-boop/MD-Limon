@@ -58,8 +58,7 @@ export function Home() {
                 <motion.div
                   key={product.id}
                   initial={{ opacity: 0, y: 10 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
+                  animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.05 }}
                 >
                   <ProductCard product={product} />
