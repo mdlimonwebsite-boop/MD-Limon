@@ -64,6 +64,10 @@ let products = [
   }
 ];
 
+let categories = [
+  "Fan", "Ring Light", "Headphone", "Drone", "Mouse & Keyboard", "Gimble", "microphone", "Wardrobe"
+];
+
 // Product API Routes
 app.get("/api/products", (req, res) => {
   res.json(products);
@@ -93,6 +97,20 @@ app.delete("/api/products/:id", (req, res) => {
   const { id } = req.params;
   products = products.filter((p) => p.id !== id);
   res.status(204).send();
+});
+
+// Category API Routes
+app.get("/api/categories", (req, res) => {
+  res.json(categories);
+});
+
+app.post("/api/categories", (req, res) => {
+  if (Array.isArray(req.body)) {
+    categories = req.body;
+    res.json(categories);
+  } else {
+    res.status(400).json({ error: "Expected an array of categories" });
+  }
 });
 
 async function startServer() {

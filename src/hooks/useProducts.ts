@@ -7,7 +7,12 @@ export function useProducts() {
 
   const fetchProducts = async () => {
     try {
-      const res = await fetch('/api/products');
+      const res = await fetch(`/api/products?t=${new Date().getTime()}`, {
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
+        }
+      });
       const data = await res.json();
       setProducts(data);
     } catch (error) {

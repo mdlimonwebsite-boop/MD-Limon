@@ -11,7 +11,7 @@ export function ProductCard({ product }: { product: Product }) {
       {/* Image Container */}
       <div className="relative aspect-square md:aspect-[4/3] overflow-hidden bg-zinc-900">
         <img
-          src={product.images[0] || "https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=800"}
+          src={product.images?.[0] || "https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=800"}
           alt={product.name}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
         />

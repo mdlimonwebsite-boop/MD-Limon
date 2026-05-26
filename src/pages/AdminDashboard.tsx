@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useProducts } from '../hooks/useProducts';
-import { Plus, Edit2, Trash2, Save, X, LayoutDashboard } from 'lucide-react';
+import { Plus, Edit2, Trash2, Save, X, LayoutDashboard, Settings, Tags } from 'lucide-react';
 import { Product } from '../types';
 
 export function AdminDashboard() {
@@ -11,6 +11,20 @@ export function AdminDashboard() {
   const [isEditing, setIsEditing] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false);
   const [formData, setFormData] = useState<Partial<Product>>({});
+  
+  // Category State
+  const [categories, setCategories] = useState<string[]>([]);
+  const [newCategory, setNewCategory] = useState("");
+  const [isManagingCategories, setIsManagingCategories] = useState(false);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetch('/api/categories')
+        .then(res => res.json())
+        .then(data => setCategories(data))
+        .catch(console.error);
+    }
+  }, [isAuthenticated]);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -86,7 +100,7 @@ export function AdminDashboard() {
       name: '',
       price: 0,
       discountPrice: null,
-      category: 'Smartphones',
+      category: categories.length > 0 ? categories[0] : 'Smartphones',
       stock: 0,
       images: [''],
       featured: false,
@@ -131,6 +145,30 @@ export function AdminDashboard() {
     }
   };
 
+  const handleAddCategory = () => {
+    if (newCategory.trim() && !categories.includes(newCategory.trim())) {
+      setCategories([...categories, newCategory.trim()]);
+      setNewCategory('');
+    }
+  };
+
+  const handleRemoveCategory = (catToRemove: string) => {
+    setCategories(categories.filter(c => c !== catToRemove));
+  };
+
+  const saveCategories = async () => {
+    try {
+      await fetch('/api/categories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(categories)
+      });
+      alert('Categories saved successfully!');
+    } catch(err) {
+      console.error("Failed to save categories", err);
+    }
+  };
+
   return (
     <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 sm:gap-0 mb-8 sm:mb-12">
@@ -145,16 +183,91 @@ export function AdminDashboard() {
             <p className="text-zinc-400 text-xs sm:text-sm mt-1">Manage products, inventory, and pricing.</p>
           </div>
         </div>
-        {!isAdding && !isEditing && (
-          <button 
-            onClick={handleAdd}
-            className="w-full sm:w-auto px-6 py-3 bg-gold-500 hover:bg-gold-400 text-zinc-950 font-semibold rounded-lg transition-transform hover:-translate-y-1 flex items-center justify-center space-x-2 shrink-0"
-          >
-            <Plus className="h-5 w-5" />
-            <span>Add Product</span>
-          </button>
-        )}
+        
+        <div className="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
+          {!isAdding && !isEditing && (
+            <>
+              <button 
+                onClick={() => setIsManagingCategories(!isManagingCategories)}
+                className={`w-full sm:w-auto px-6 py-3 font-semibold rounded-lg transition-transform flex items-center justify-center space-x-2 shrink-0 border ${isManagingCategories ? 'bg-zinc-800 text-white border-white/10' : 'bg-transparent text-zinc-300 border-white/10 hover:bg-zinc-900 hover:text-white'}`}
+              >
+                <Tags className="h-5 w-5" />
+                <span>{isManagingCategories ? 'Close Categories' : 'Manage Categories'}</span>
+              </button>
+              <button 
+                onClick={handleAdd}
+                className="w-full sm:w-auto px-6 py-3 bg-gold-500 hover:bg-gold-400 text-zinc-950 font-semibold rounded-lg transition-transform hover:-translate-y-1 flex items-center justify-center space-x-2 shrink-0"
+              >
+                <Plus className="h-5 w-5" />
+                <span>Add Product</span>
+              </button>
+            </>
+          )}
+        </div>
       </div>
+
+      {isManagingCategories && !isAdding && !isEditing && (
+        <div className="glass-card rounded-2xl p-6 sm:p-8 mb-8 border border-white/5">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-bold text-white flex items-center gap-2 uppercase tracking-wide text-sm">
+              Manage Categories <span className="text-gold-500">({categories.length})</span>
+            </h2>
+            <span className="text-[10px] text-gold-500 font-bold tracking-widest uppercase">Dynamic List</span>
+          </div>
+          
+          <div className="flex gap-2 mb-6">
+            <input 
+              type="text" 
+              placeholder="e.g. Jeans, Oversized Tees, Gift Sets" 
+              value={newCategory}
+              onChange={(e) => setNewCategory(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleAddCategory();
+                }
+              }}
+              className="flex-grow px-4 py-3 bg-zinc-900 border border-white/10 rounded-lg text-white focus:border-gold-500 focus:outline-none"
+            />
+            <button 
+              onClick={handleAddCategory}
+              className="px-6 bg-gold-500 hover:bg-gold-400 text-black rounded-lg transition-colors flex items-center justify-center font-bold text-xl"
+            >
+              +
+            </button>
+          </div>
+
+          <div className="bg-zinc-900/50 border border-white/5 rounded-xl p-4 mb-6 max-h-[300px] overflow-y-auto custom-scrollbar flex flex-wrap gap-2">
+            {categories.map((cat, i) => (
+              <div key={i} className="bg-zinc-800/80 border border-white/10 text-white px-3 py-2 rounded-lg flex items-center gap-3 text-sm transition-colors hover:bg-zinc-800 group">
+                <span className="truncate max-w-[150px] sm:max-w-[200px]">{cat}</span>
+                <button 
+                  onClick={() => handleRemoveCategory(cat)}
+                  className="text-zinc-500 hover:text-red-400 transition-colors focus:outline-none"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            ))}
+            {categories.length === 0 && (
+              <div className="text-zinc-500 text-sm italic w-full text-center py-8">
+                No categories added. Add some categories above.
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2 text-xs text-zinc-400 mb-6 uppercase tracking-wider font-semibold">
+            <span className="text-gold-500">💡</span> Remember to click "Save Settings Changes" below to persist your new lists.
+          </div>
+
+          <button 
+            onClick={saveCategories}
+            className="w-full sm:w-auto px-8 py-3 bg-gold-500 hover:bg-gold-400 text-black font-bold uppercase tracking-wider rounded-lg transition-colors flex items-center justify-center gap-2 text-sm"
+          >
+            <Save className="h-4 w-4" /> Save Settings Changes
+          </button>
+        </div>
+      )}
 
       {(isAdding || isEditing) ? (
         <div className="glass-card rounded-2xl p-8 mb-8 border border-gold-500/30 shadow-[0_0_30px_rgba(245,158,11,0.1)]">
@@ -169,7 +282,9 @@ export function AdminDashboard() {
             <div>
               <label className="block text-sm font-medium text-zinc-400 mb-2">Category</label>
               <select name="category" value={formData.category || ''} onChange={handleInputChange} className="w-full px-4 py-3 bg-zinc-900 border border-white/10 rounded-lg text-white focus:border-gold-500 focus:outline-none">
-                {['Smartphones', 'Smart Watches', 'Headphones', 'Earbuds', 'Power Banks', 'Accessories'].map(cat => (
+                {categories.length > 0 ? categories.map(cat => (
+                  <option key={cat} value={cat}>{cat}</option>
+                )) : ['Smartphones', 'Smart Watches', 'Headphones', 'Earbuds', 'Power Banks', 'Accessories'].map(cat => (
                   <option key={cat} value={cat}>{cat}</option>
                 ))}
               </select>
@@ -219,7 +334,7 @@ export function AdminDashboard() {
                   <td className="px-6 py-4">
                     <div className="flex items-center space-x-4">
                       <div className="h-12 w-12 rounded-lg bg-zinc-800 overflow-hidden shrink-0">
-                        <img src={product.images[0]} alt={product.name} className="h-full w-full object-cover" />
+                        <img src={product.images?.[0] || 'https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=800'} alt={product.name} className="h-full w-full object-cover" />
                       </div>
                       <div className="font-medium text-white">{product.name}</div>
                     </div>
