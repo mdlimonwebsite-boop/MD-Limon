@@ -9,6 +9,7 @@ export function Home() {
 
   return (
     <div className="w-full">
+
       {/* Hero Section */}
       <section className="relative py-6 flex items-center overflow-hidden">
         {/* Abstract Background Elements */}

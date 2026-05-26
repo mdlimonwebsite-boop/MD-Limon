@@ -95,6 +95,7 @@ let categories = [
 
 // Product API Routes
 app.get("/api/products", (req, res) => {
+  console.log("GET /api/products called. Found products:", products.length);
   res.json(products);
 });
 

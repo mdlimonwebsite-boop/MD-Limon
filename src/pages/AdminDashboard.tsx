@@ -122,16 +122,22 @@ export function AdminDashboard() {
       const url = isAdding ? '/api/products' : `/api/products/${formData.id}`;
       const method = isAdding ? 'POST' : 'PUT';
 
-      await fetch(url, {
+      const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       });
 
+      if (!res.ok) {
+        throw new Error(`Failed with status ${res.status}`);
+      }
+
       await refetch();
       cancelEdit();
+      alert(isAdding ? "Product added successfully!" : "Product updated successfully!");
     } catch (error) {
       console.error("Failed to save product", error);
+      alert("Failed to save product: " + error);
     }
   };
 
