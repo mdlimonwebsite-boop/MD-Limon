@@ -1,0 +1,6 @@
+{
+  "name": "Limon Telecom",
+  "description": "Premium mobile servicing and gadget shop eCommerce platform with full admin controls, black and golden luxury theme.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
