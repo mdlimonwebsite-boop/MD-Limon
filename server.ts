@@ -5,11 +5,12 @@ import { createServer as createViteServer } from "vite";
 
 const app = express();
 const PORT = 3000;
+const DATA_FILE = path.join(process.cwd(), 'data.json');
 
 app.use(express.json({ limit: "50mb" }));
 
-// Fake database
-let products = [
+// Default products
+const defaultProducts = [
   {
     id: "1",
     name: "Golden AirPods Pro 2",
@@ -64,6 +65,30 @@ let products = [
   }
 ];
 
+let products = [];
+
+// Initialize database
+try {
+  if (fs.existsSync(DATA_FILE)) {
+    const data = fs.readFileSync(DATA_FILE, 'utf-8');
+    products = JSON.parse(data);
+  } else {
+    products = [...defaultProducts];
+    fs.writeFileSync(DATA_FILE, JSON.stringify(products, null, 2));
+  }
+} catch (error) {
+  console.error("Error reading data.json, falling back to defaults", error);
+  products = [...defaultProducts];
+}
+
+const saveProducts = () => {
+  try {
+    fs.writeFileSync(DATA_FILE, JSON.stringify(products, null, 2));
+  } catch (error) {
+    console.error("Failed to save products to data.json", error);
+  }
+};
+
 let categories = [
   "Fan", "Ring Light", "Headphone", "Drone", "Mouse & Keyboard", "Gimble", "microphone", "Wardrobe"
 ];
@@ -79,6 +104,7 @@ app.post("/api/products", (req, res) => {
     ...req.body,
   };
   products.push(newProduct);
+  saveProducts();
   res.status(201).json(newProduct);
 });
 
@@ -87,6 +113,7 @@ app.put("/api/products/:id", (req, res) => {
   const index = products.findIndex((p) => p.id === id);
   if (index !== -1) {
     products[index] = { ...products[index], ...req.body };
+    saveProducts();
     res.json(products[index]);
   } else {
     res.status(404).json({ error: "Product not found" });
@@ -96,6 +123,7 @@ app.put("/api/products/:id", (req, res) => {
 app.delete("/api/products/:id", (req, res) => {
   const { id } = req.params;
   products = products.filter((p) => p.id !== id);
+  saveProducts();
   res.status(204).send();
 });
 
