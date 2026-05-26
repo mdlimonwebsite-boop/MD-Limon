@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useProducts } from '../hooks/useProducts';
 import { Plus, Edit2, Trash2, Save, X, LayoutDashboard, Settings, Tags } from 'lucide-react';
 import { Product } from '../types';
+import { getCategories, saveCategories, getProducts, saveProducts as storeSaveProducts } from '../lib/store';
 
 export function AdminDashboard() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -19,10 +20,7 @@ export function AdminDashboard() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      fetch('/api/categories')
-        .then(res => res.json())
-        .then(data => setCategories(data))
-        .catch(console.error);
+      setCategories(getCategories());
     }
   }, [isAuthenticated]);
 
@@ -119,19 +117,21 @@ export function AdminDashboard() {
 
   const saveProduct = async () => {
     try {
-      const url = isAdding ? '/api/products' : `/api/products/${formData.id}`;
-      const method = isAdding ? 'POST' : 'PUT';
-
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
-
-      if (!res.ok) {
-        throw new Error(`Failed with status ${res.status}`);
+      const currentProducts = getProducts();
+      let newProducts: Product[];
+      
+      if (isAdding) {
+        const newProduct = {
+          ...formData,
+          id: Date.now().toString()
+        } as Product;
+        newProducts = [...currentProducts, newProduct];
+      } else {
+        newProducts = currentProducts.map(p => p.id === formData.id ? { ...p, ...formData } as Product : p);
       }
-
+      
+      storeSaveProducts(newProducts);
+      
       await refetch();
       cancelEdit();
       alert(isAdding ? "Product added successfully!" : "Product updated successfully!");
@@ -144,7 +144,9 @@ export function AdminDashboard() {
   const deleteProduct = async (id: string) => {
     if (!window.confirm("Are you sure you want to delete this product?")) return;
     try {
-      await fetch(`/api/products/${id}`, { method: 'DELETE' });
+      const currentProducts = getProducts();
+      const newProducts = currentProducts.filter(p => p.id !== id);
+      storeSaveProducts(newProducts);
       await refetch();
     } catch (error) {
       console.error("Failed to delete product", error);
@@ -162,13 +164,9 @@ export function AdminDashboard() {
     setCategories(categories.filter(c => c !== catToRemove));
   };
 
-  const saveCategories = async () => {
+  const handleSaveCategories = async () => {
     try {
-      await fetch('/api/categories', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(categories)
-      });
+      saveCategories(categories);
       alert('Categories saved successfully!');
     } catch(err) {
       console.error("Failed to save categories", err);
@@ -267,7 +265,7 @@ export function AdminDashboard() {
           </div>
 
           <button 
-            onClick={saveCategories}
+            onClick={handleSaveCategories}
             className="w-full sm:w-auto px-8 py-3 bg-gold-500 hover:bg-gold-400 text-black font-bold uppercase tracking-wider rounded-lg transition-colors flex items-center justify-center gap-2 text-sm"
           >
             <Save className="h-4 w-4" /> Save Settings Changes

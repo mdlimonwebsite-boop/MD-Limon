@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Product } from '../types';
+import { getProducts } from '../lib/store';
 
 export function useProducts() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -7,9 +8,9 @@ export function useProducts() {
 
   const fetchProducts = async () => {
     try {
-      const res = await fetch(`/api/products?t=${new Date().getTime()}`);
-      const data = await res.json();
-      setProducts(data);
+      // Simulate network request for realistic loading state
+      await new Promise(r => setTimeout(r, 100));
+      setProducts(getProducts());
     } catch (error) {
       console.error("Failed to fetch products", error);
     } finally {
